@@ -14,7 +14,7 @@ Two header-only libraries:
 - Eigen
 ## Usage
 ### Calculate acceleration
-Calculate the 4-acceleration for a metric and initial velocity/position.
+Calculate the 4-acceleration for a set of metric,velocity and position.
  ~~~c++
 //Write your own metric function, or use built-in templates.
 Matrix4real schwarzchild_cartesian(const Vector4real& x) {
