@@ -14,22 +14,23 @@ Two header-only libraries:
 - Eigen
 ## Usage
 ### Calculate acceleration
-    //Write your own metric function, or use built-in templates.
-    Matrix4real schwarzchild_cartesian(const Vector4real& x) {
-        double mass = 5.972e24;
-        Vector3d x0 = { 0.0,0.0,0.0 };
-        return AutoGeodesic::Metrics::schwarzchild_cartesian(x, mass, x0);
-    }
+ ~~~c++
+//Write your own metric function, or use built-in templates.
+Matrix4real schwarzchild_cartesian(const Vector4real& x) {
+    double mass = 5.972e24;
+    Vector3d x0 = { 0.0,0.0,0.0 };
+    return AutoGeodesic::Metrics::schwarzchild_cartesian(x, mass, x0);
+}
 
-    AutoGeodesic ag = AutoGeodesic();
-    ag.setMetFn(&schwarzchild_cartesian);
+AutoGeodesic ag = AutoGeodesic();
+ag.setMetFn(&schwarzchild_cartesian);
 
-    Vector4d x = {0.0,6371000.0,0.0,0.0};
-    Vector3d vel3 = {0.0,sqrt(9.81*6371000.0),0.0}
+Vector4d x = {0.0,6371000.0,0.0,0.0};
+Vector3d vel3 = {0.0,sqrt(9.81*6371000.0),0.0}
 
-    Vector4d vel = ag.setupfourvelocity(x,vel3); //Turn velocity into 4-velocity.
-    Vector4d acc = ag.calculate_acc(x,vel);
-  
+Vector4d vel = ag.setupfourvelocity(x,vel3); //Turn velocity into 4-velocity.
+Vector4d acc = ag.calculate_acc(x,vel);
+~~~  
   
   
   
