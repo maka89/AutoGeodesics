@@ -13,16 +13,34 @@ Two header-only libraries:
 - https://github.com/autodiff/autodiff
 - Eigen
 ## Usage
-### Calculate acceleration
-Calculate the 4-acceleration for a set of metric,velocity and position.
+
+### Set a metric function
+Write your own metric function or use built in templates. 
  ~~~c++
-//Write your own metric function, or use built-in templates.
+Matrix4real schwarzchild(const Vector4real& x) {
+    double mass = 5.972e24;
+    double rs = 2.0 * c_g * mass / pow(c_c, 2);
+    Matrix4real metric = Matrix4real::Zero();
+    metric(0, 0) = -(1.0 - rs / x[1]);
+    metric(1, 1) = 1.0 / (1.0 - rs / x[1]);
+    metric(2, 2) = x[1] * x[1];
+    metric(3, 3) = x[1] * x[1] * sin(x[2]) * sin(x[2]);
+
+    return -1 * metric;
+}
+
 Matrix4real schwarzchild_cartesian(const Vector4real& x) {
     double mass = 5.972e24;
     Vector3d x0 = { 0.0,0.0,0.0 };
     return AutoGeodesic::Metrics::schwarzchild_cartesian(x, mass, x0);
 }
 
+
+~~~
+
+### Calculate acceleration
+Calculate the 4-acceleration for a set of metric,velocity and position.
+ ~~~c++
 AutoGeodesic ag = AutoGeodesic();
 ag.setMetFn(&schwarzchild_cartesian);
 
