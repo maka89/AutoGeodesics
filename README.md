@@ -29,7 +29,7 @@ ag.setMetFn(&schwarzchild_cartesian);
 Vector4d x = {0.0,6371000.0,0.0,0.0};
 Vector3d vel3 = {0.0,sqrt(9.81*6371000.0),0.0}
 
-Vector4d vel = ag.setupfourvelocity(x,vel3); //Turn velocity into 4-velocity.
+Vector4d vel = ag.setup_fourvelocity(x,vel3); //Turn velocity into 4-velocity.
 Vector4d acc = ag.calculate_acc(x,vel);
 ~~~  
 ### Integrate the Geodesics Equation...
