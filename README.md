@@ -40,7 +40,7 @@ ag.setMetFn(&schwarzchild_cartesian);
 ~~~
 
 ### Calculate acceleration
-Calculate the 4-acceleration for a set of metric,velocity and position.
+Calculate the 4-acceleration for a set of velocity and position.
  ~~~c++
 
 
