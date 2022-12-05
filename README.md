@@ -37,7 +37,7 @@ Built-in methods lets you calculate the next position/velocity. The Geodesic Equ
 
  ~~~c++
  int steps = 200000;
- double t_end = 2*3.1415*sqrt(6371000.0)/9.81;
+ double t_end = 2*3.1415*sqrt(6371000.0/9.81);
  double dt = t_end / steps;
 
 Vector4d x, vel, acc, xo, velo, acco;
