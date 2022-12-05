@@ -40,12 +40,12 @@ Built-in methods lets you calculate the next position/velocity. The Geodesic Equ
  double t_end = 2*3.1415*sqrt(6371000.0/9.81);
  double dt = t_end / steps;
 
-Vector4d x, vel, acc, xo, velo, acco;
+Vector4d xo, velo, acco; //Last timestep position/velocity/acceleration.
     
  for (int i = 0; i < steps; i++) {
      acco = acc;
      velo = vel;
      xo = x;
-     ag.step_velocity_verlet(x, vel, acc, std::make_tuple(xo, velo, acco), dt, 1e-6);
+     ag.step_velocity_verlet(x, vel, acc, std::make_tuple(xo, velo, acco), dt, 1e-6); //x,vel,acc is passed by reference and overwritten.
  }
  ~~~   
