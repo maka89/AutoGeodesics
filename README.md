@@ -35,14 +35,14 @@ Matrix4real schwarzchild_cartesian(const Vector4real& x) {
     return AutoGeodesic::Metrics::schwarzchild_cartesian(x, mass, x0);
 }
 
-
+AutoGeodesic ag = AutoGeodesic();
+ag.setMetFn(&schwarzchild_cartesian);
 ~~~
 
 ### Calculate acceleration
 Calculate the 4-acceleration for a set of metric,velocity and position.
  ~~~c++
-AutoGeodesic ag = AutoGeodesic();
-ag.setMetFn(&schwarzchild_cartesian);
+
 
 Vector4d x = {0.0,6371000.0,0.0,0.0};
 Vector3d vel3 = {0.0,sqrt(9.81*6371000.0),0.0}
