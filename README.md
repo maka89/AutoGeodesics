@@ -17,6 +17,8 @@ Two header-only libraries:
 ### Set a metric function
 Write your own metric function or use built in templates. 
  ~~~c++
+ 
+ //Write your own...
 Matrix4real schwarzchild(const Vector4real& x) {
     double mass = 5.972e24;
     double rs = 2.0 * c_g * mass / pow(c_c, 2);
@@ -29,6 +31,7 @@ Matrix4real schwarzchild(const Vector4real& x) {
     return -1 * metric;
 }
 
+//Or use built-in templates
 Matrix4real schwarzchild_cartesian(const Vector4real& x) {
     double mass = 5.972e24;
     Vector3d x0 = { 0.0,0.0,0.0 };
