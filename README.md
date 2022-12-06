@@ -1,4 +1,4 @@
-# AutoRelativity
+# AutoGeodesics
 Easily integrate the geodesics equation using automatic differentiation.
 
 ## Introduction
@@ -50,13 +50,14 @@ Calculate the 4-acceleration for a set of velocity and position.
 Vector4d x = {0.0,6371000.0,0.0,0.0};
 Vector3d vel3 = {0.0,sqrt(9.81*6371000.0),0.0}
 
-Vector4d vel = ag.setup_fourvelocity(x,vel3); //Turn velocity into 4-velocity.
-Vector4d acc = ag.calculate_acc(x,vel);
+Vector4d velocity = ag.setup_fourvelocity(x,vel3); //Turn velocity into 4-velocity.
+Vector4d acc = ag.calculate_acc(x,velocity);
 ~~~  
 ### Integrate the Geodesics Equation...
 Built-in methods lets you calculate the next position/velocity. The Geodesic Equation can be integrated using velocity-verlet integration.
 
  ~~~c++
+ 
  int steps = 200000;
  double t_end = 2*3.1415*sqrt(6371000.0/9.81);
  double dt = t_end / steps;
@@ -70,3 +71,13 @@ Vector4d xo, velo, acco; //Last timestep position/velocity/acceleration.
      ag.step_velocity_verlet(x, vel, acc, std::make_tuple(xo, velo, acco), dt, 1e-6); //x,vel,acc is passed by reference and overwritten.
  }
  ~~~   
+
+### Use your own numerical methods
+Common integration schemes , like leapfrog and velocity verlet, require implicit methods for calculating the velocity  $v_{i+1} = f(v_{i+1})$. 
+Efficiently solving these equations, require the acceleration and the jacobian of the acceleration wrt. the velocity.
+The class has methods for calculating the jacobian.
+ ~~~c++
+Vector4d acc;
+Matrix4d J;
+ag.calculate_acc_velocity_jacobian(acc,J, velocity, x); //acc,J passed by reference and overwritten.
+~~~
