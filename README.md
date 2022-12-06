@@ -50,8 +50,8 @@ Calculate the 4-acceleration for a set of velocity and position.
 Vector4d x = {0.0,6371000.0,0.0,0.0};
 Vector3d vel3 = {0.0,sqrt(9.81*6371000.0),0.0}
 
-Vector4d velocity = ag.setup_fourvelocity(x,vel3); //Turn velocity into 4-velocity.
-Vector4d acc = ag.calculate_acc(x,velocity);
+Vector4d velocity = ag.setup_fourvelocity(x, vel3); //Turn velocity into 4-velocity.
+Vector4d acc = ag.calculate_acc(x, velocity);
 ~~~  
 ### Integrate the Geodesics Equation...
 Built-in methods lets you calculate the next position/velocity. The Geodesic Equation can be integrated using velocity-verlet integration.
@@ -79,5 +79,5 @@ The class has methods for calculating the jacobian.
  ~~~c++
 Vector4d acc;
 Matrix4d J;
-ag.calculate_acc_velocity_jacobian(acc,J, velocity, x); //acc,J passed by reference and overwritten.
+ag.calculate_acc_velocity_jacobian(acc, J, velocity, x); //acc,J passed by reference and overwritten.
 ~~~
