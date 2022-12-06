@@ -35,10 +35,10 @@ Matrix4real schwarzchild(const Vector4real& x) {
 Matrix4real schwarzchild_cartesian(const Vector4real& x) {
     double mass = 5.972e24;
     Vector3d x0 = { 0.0,0.0,0.0 };
-    return AutoGeodesic::Metrics::schwarzchild_cartesian(x, mass, x0);
+    return AutoGeodesics::Metrics::schwarzchild_cartesian(x, mass, x0);
 }
 
-AutoGeodesic ag = AutoGeodesic();
+AutoGeodesics ag = AutoGeodesics();
 ag.setMetFn(&schwarzchild_cartesian);
 ~~~
 
