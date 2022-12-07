@@ -8,7 +8,7 @@ Matrix4real schwarzschild_cartesian(const Vector4real& x) {
 
 int main() {
 	AutoGeodesics ag = AutoGeodesics();
-	ag.setMetFn(&schwarzchild_cartesian);
+	ag.setMetFn(&schwarzschild_cartesian);
 	Vector4d x = { 0.0,6371000.0,0.0,0.0 };
 
 	Vector4d velocity = ag.setup_fourvelocity(x, Vector3d({ 0.0,sqrt(9.81 * 6371000.0),0.0 })); //Turn velocity into 4-velocity.
