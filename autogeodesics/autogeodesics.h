@@ -56,7 +56,7 @@ private:
 
 class AutoGeodesicsBase::Metrics {
 public:
-    static inline Matrix4real schwarzchild_cartesian(const Vector4real& xi, double mass, Vector3d x0) {
+    static inline Matrix4real schwarzschild_cartesian(const Vector4real& xi, double mass, Vector3d x0) {
 
 
         Vector4real x;
@@ -137,7 +137,7 @@ public:
 
         return -1.0 * metric;
     };
-    static inline Matrix4real schwarzchild(const Vector4real& x, double mass) {
+    static inline Matrix4real schwarzschild(const Vector4real& x, double mass) {
 
         double rs = 2.0 * c_g * mass / pow(c_c, 2);
         Matrix4real metric = Matrix4real::Zero();
