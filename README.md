@@ -35,7 +35,7 @@ Matrix4real schwarzschild(const Vector4real& x) {
 Matrix4real schwarzschild_cartesian(const Vector4real& x) {
     double mass = 5.972e24;
     Vector3d x0 = { 0.0,0.0,0.0 };
-    return AutoGeodesics::Metrics::schwarzchild_cartesian(x, mass, x0);
+    return AutoGeodesics::Metrics::schwarzschild_cartesian(x, mass, x0);
 }
 
 AutoGeodesics ag = AutoGeodesics();
