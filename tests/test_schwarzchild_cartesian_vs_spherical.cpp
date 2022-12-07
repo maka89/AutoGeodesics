@@ -4,17 +4,17 @@
 #include <vector>
 #include <array>
 
-inline Matrix4real schwarzchild_cart(const Vector4real &x) {
+inline Matrix4real schwarzschild_cart(const Vector4real &x) {
     double mass = 5.972e24;
     Vector3d x0 = { 0.0,0.0,0.0 };
 
-    return AutoGeodesics::Metrics::schwarzchild_cartesian(x, mass, x0);
+    return AutoGeodesics::Metrics::schwarzschild_cartesian(x, mass, x0);
 }
 
- inline Matrix4real schwarzchild(const Vector4real& x) {
+ inline Matrix4real schwarzschild(const Vector4real& x) {
     double mass = 5.972e24;
 
-    return  AutoGeodesics::Metrics::schwarzchild(x, mass);
+    return  AutoGeodesics::Metrics::schwarzschild(x, mass);
 
 }
 std::vector<std::array<double,5>> run( bool cart) {
@@ -29,12 +29,12 @@ std::vector<std::array<double,5>> run( bool cart) {
     double r0 = 0.02;// 6371000.0;
     double m_pi = 3.1415926535897932384626433;
     if (cart) {
-        metricfn = &schwarzchild_cart;
+        metricfn = &schwarzschild_cart;
         x << 0.0, r0 / sqrt(2), r0 / sqrt(2), 0.0;
         vel3 << escape_vel/sqrt(2), escape_vel/sqrt(2), 0.0;
     }
     else {
-        metricfn = &schwarzchild;
+        metricfn = &schwarzschild;
         double theta = 0.5 * m_pi;
         double phi = 0.25 * m_pi;
         x << 0.0, r0, theta, phi;
