@@ -19,7 +19,7 @@ Write your own metric function or use built in templates.
  ~~~c++
  
  //Write your own...
-Matrix4real schwarzchild(const Vector4real& x) {
+Matrix4real schwarzschild(const Vector4real& x) {
     double mass = 5.972e24;
     double rs = 2.0 * c_g * mass / pow(c_c, 2);
     Matrix4real metric = Matrix4real::Zero();
@@ -32,14 +32,14 @@ Matrix4real schwarzchild(const Vector4real& x) {
 }
 
 //Or use built-in templates
-Matrix4real schwarzchild_cartesian(const Vector4real& x) {
+Matrix4real schwarzschild_cartesian(const Vector4real& x) {
     double mass = 5.972e24;
     Vector3d x0 = { 0.0,0.0,0.0 };
     return AutoGeodesics::Metrics::schwarzchild_cartesian(x, mass, x0);
 }
 
 AutoGeodesics ag = AutoGeodesics();
-ag.setMetFn(&schwarzchild_cartesian);
+ag.setMetFn(&schwarzschild_cartesian);
 ~~~
 
 ### Calculate acceleration
