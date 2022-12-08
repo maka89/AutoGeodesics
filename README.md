@@ -71,7 +71,7 @@ Built-in methods lets you calculate the next position/velocity. The Geodesic Equ
 //Calculate 1 circular orbit at earth radius. Use 1000 steps.
 int steps = 1000;
 double dt= 2 * 3.141592 * sqrt(x[2] / 9.81997) / steps;
-
+Vector4d velo,xo;
 for (int i = 0; i < steps; i++) {
     velo = velocity;
     xo = x;
