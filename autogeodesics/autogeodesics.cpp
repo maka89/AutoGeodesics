@@ -1,77 +1,128 @@
 #pragma once
 #include "autogeodesics.h"
-void AutoGeodesics::calculate_acc_velocity_jacobian(Vector4d& acc, Matrix4d& J, const Vector4d& velocity, const Vector4d& x)
-{
+#include <iostream>
+
+void AutoGeodesics::implicit_midpoint_resids(VectorXd& res, MatrixXd& J, const VectorXd &nowd, const VectorXd &old, const double &dt) {
+
+	Vector<var, 8> now;
+	for (size_t i = 0; i < 8; i++)
+		now[i] = nowd[i];
+	Vector4var xnow = { now[0],now[1],now[2],now[3] };
+	Vector4var xold = { old[0],old[1],old[2],old[3] };
+	Vector4var acc;
+
+	Vector4var u = { 0.5 * (now[4] + old[4]),0.5 * (now[5] + old[5]),0.5 * (now[6] + old[6]),0.5 * (now[7] + old[7]) };
+
+	Vector<var, 8> resids;
+	if (this->proper_time) {
+		for (size_t i = 0; i < 4; i++)
+			resids[i] = now[i] - old[i] - 0.5 * dt * (now[i + 4] + old[i + 4]);
+
+		acc = calculate_acc(0.5 * (xnow + xold),u);
+		for (size_t i = 0; i < 4; i++)
+			resids[4 + i] = now[4 + i] - old[4 + i] - acc[i]*dt;
+	
+	}
+	else {
 
 
-std::array<Matrix4d, 4> christoffel = calculate_christoffel(x);
-acc = get_acc(christoffel, velocity);
+		resids[0] = now[0] - old[0] - c_c * dt;
+		for (size_t i = 1; i < 4; i++)
+			resids[i] = now[i] - old[i] - 0.5 * dt * (now[i + 4] + old[i + 4]);
 
-for (size_t i = 0; i < 4; i++)
-	J.row(i) = 2.0 * christoffel[i] * velocity;
+		acc = calculate_acc(0.5 * (xnow + xold), u);
+
+		resids[4] = now[4] - old[4];
+		for (size_t i = 1; i < 4; i++)
+			resids[4 + i] = now[4 + i] - old[4 + i] - acc[i] * dt;
+
+	}
+	res = resids.cast<double>();
+	for (size_t i = 0; i < 8; i++)
+		J.row(i) = gradient(resids[i], now);
+}
+
+Vector<double,8> AutoGeodesics::rk_f(const Vector<double, 8> &d) {
+	Vector<double, 8>tmp;
+	Vector4d x = { d[0],d[1],d[2],d[3] };
+	Vector4d v = { d[4],d[5],d[6],d[7] };
+
+	tmp(seq(0, 4)) = v;
+	tmp(seq(4, last)) = calculate_acc(x, v);
+	return tmp;
+}
+void AutoGeodesics::step_rk4(Vector4d& x, Vector4d& v, const std::tuple<Vector4d, Vector4d>& x_v_old, const double& dt) {
+	Vector4d x_old = std::get<0>(x_v_old);
+	Vector4d v_old = std::get<1>(x_v_old);
+	Vector<double, 8> old,newd;
+	for (size_t i = 0; i < 4; i++) {
+		old[i] = x_old[i];
+		old[i + 4] = v_old[i];
+	}
+
+	Vector<double, 8> k1, k2, k3, k4;
+	k1 = rk_f(old);
+	k2 = rk_f(old + 0.5 * dt * k1);
+	k3 = rk_f(old + 0.5 * dt * k2);
+	k4 = rk_f(old + dt * k3);
+
+	newd = old+dt*(k1 + 2.0 * k2 + 2.0 * k3 + k4) / 6.0;
+
+	for (size_t i = 0; i < 4; i++) {
+		x[i] = newd[i];
+		v[i] = newd[4 + i];
+	}
+
+
 
 }
 
-int AutoGeodesics::velocity_verlet_resids(Vector4d &resids, Matrix4d &jacc, const Vector4d& velocity, const std::array<Matrix4d, 4>& chr, const Vector4d& v_old, const Vector4d& acc_old, const Vector4d& x, const double& dt) {
+std::tuple<double,int> AutoGeodesics::step_implicit_midpoint(Vector4d& x, Vector4d& v, const std::tuple<Vector4d, Vector4d>& x_v_old, const double& dt, const double tol) {
 
-	resids = (velocity - v_old) - 0.5 * (acc_old + get_acc(chr, velocity)) * dt;
+	VectorXd dx, errs;
 
-	for (size_t i = 0; i < 4; i++)
-		jacc.row(i) = chr[i] * velocity * dt;
-	jacc = jacc+ Matrix4d::Identity();
+	VectorXd resids;
+	MatrixXd J;
 
-	return 0;
-}
+	resids = Vector<double, 8>::Zero();
+	J = Matrix<double, 8, 8>::Zero();
 
-void AutoGeodesics::step_euler(Vector4d& x, Vector4d& v, Vector4d& acc, const std::tuple<Vector4d, Vector4d, Vector4d>& x_v_a_old,  const double& dt) {
-	auto [x_old, v_old, acc_old] = x_v_a_old;
-	v = v_old + acc_old * dt;
-	x = x_old + v_old * dt;
-	acc = calculate_acc(x, v);
-}
-void AutoGeodesics::step_euler_cromer(Vector4d& x, Vector4d& v, Vector4d& acc, const std::tuple<Vector4d, Vector4d, Vector4d>& x_v_a_old,  const double& dt) {
-	auto [x_old, v_old, acc_old] = x_v_a_old;
-	v = v_old + acc_old * dt;
-	x = x_old + v * dt;
-	acc = calculate_acc(x, v);
-}
-void AutoGeodesics::step_euler_midpoint(Vector4d& x, Vector4d& v, Vector4d& acc, const std::tuple<Vector4d, Vector4d, Vector4d>& x_v_a_old, const double& dt) {
-	auto [x_old, v_old, acc_old] = x_v_a_old;
-	v = v_old + acc_old * dt;
-	x = x_old + 0.5*(v+v_old) * dt;
-	acc = calculate_acc(x, v);
-}
+	Vector4d x_old = std::get<0>(x_v_old);
+	Vector4d v_old = std::get<1>(x_v_old);
 
-double AutoGeodesics::step_velocity_verlet(Vector4d &x,Vector4d &v,Vector4d &acc, const std::tuple<Vector4d, Vector4d, Vector4d> &x_v_a_old,  const double& dt,const double tol) {
+	Vector<double, 8> nowd, oldd;
+	for (size_t i = 0; i < 4; i++){
+		oldd[i] = x_old[i];
+		oldd[i + 4] = v_old[i];
+	}
 
-	Vector4d dv, errs, resids;
-	Matrix4d J;
 
-	auto [x_old, v_old, acc_old] = x_v_a_old;
-
-	//Update position
-	x = x_old + v_old * dt + 0.5 * acc_old * dt * dt;
+	//
+	// Init guess - Semi implicit Euler
+	////
+	
+	Vector4d acc = calculate_acc(x_old,v_old);
+	for (size_t i = 0; i < 4; i++) {
+		nowd[4 + i] = v_old[i] + dt * acc[i];
+		nowd[i] = x_old[i]+ dt * nowd[4 + i];
+	}
+	
 
 	
-	v = v_old +  acc_old* dt; //init guess for velocity;
-
-
-	std::array<Matrix4d, 4> christoffel = calculate_christoffel(x);
-
+	double err;
 	//Newtons method
-	double err = 0.0;
-	for (size_t i = 0; i < 30; i++) {
+	int n = 1;
+	for (size_t i = 0; i < 10; i++) {
 
 
+		implicit_midpoint_resids(resids, J, nowd,oldd, dt);
 
-		velocity_verlet_resids(resids, J, v, christoffel, v_old, acc_old, x, dt);
+		dx = J.llt().solve(-resids);
+		nowd = nowd + dx;
 
-		dv = J.llt().solve(-resids);
-		v = v + dv;
-
-		errs = J * dv - resids;
+		errs = J * dx - resids;
 		err = -1.0;
-		for (size_t j = 0; j < 4; j++) {
+		for (size_t j = 0; j < 8; j++) {
 			if (err < abs(errs[j])) 
 				err = abs(errs[j]);
 			
@@ -79,13 +130,12 @@ double AutoGeodesics::step_velocity_verlet(Vector4d &x,Vector4d &v,Vector4d &acc
 
 		if (err < tol) 
 			break;
-		
+		n += 1;
 	}
-
-	//Update velocity and acceleration
-	acc = get_acc(christoffel, v);
-
-
-	return err;
+	for (size_t i = 0; i < 4; i++) {
+		x[i] = nowd[i];
+		v[i] = nowd[4 + i];
+	}
+	return std::make_tuple(err,n);
 };
 
