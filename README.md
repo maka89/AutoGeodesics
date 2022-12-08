@@ -96,22 +96,22 @@ The class has methods for calculating the jacobian.
 
 The function `Vector4var AutoGeodesics::calculate_acc(const Vector4var& x, const Vector4var& velocity)` function uses c++ autodiff functions. The Jacobian of the acceleration can be calculated wrt. positiono or velocity
 
-~~~
+~~~c++
 
 J=Matrix4d;
 Vector4var acc = calculate_acc(x,v);
 
 //Jacobian (acc wrt x)
 for (size_t i = 0; i < 4; i++)
-  J.row(i) = gradient(resids[i], x);
+    J.row(i) = gradient(resids[i], x);
   
 J=Matrix4d;
 // Jacobian(acc wrt v)
 for (size_t i = 0; i < 4; i++)
-		J.row(i) = gradient(resids[i], v);
+    J.row(i) = gradient(resids[i], v);
   
 Vector4var acc = calculate_acc(const Vector<var,8> x){
-  return calculate_acc(x(seq(0,4),x(seq(4,last));
+    return calculate_acc(x(seq(0,4),x(seq(4,last));
 }
 
 J=Matrix<double,4,8>
@@ -120,6 +120,6 @@ J=Matrix<double,4,8>
 Vector<var,8> xx;
 xx << x[0],x[1],x[2],x[3],v[0],v[1],v[2],v[3];
 for (size_t i = 0; i < 4; i++)
-  J.row(i) = gradient(resids[i], xx);
+    J.row(i) = gradient(resids[i], xx);
 ~~~
 
