@@ -68,19 +68,25 @@ Calculate the 4-acceleration for a set of velocity and position.
 Built-in methods lets you calculate the next position/velocity. The Geodesic Equation can be integrated using velocity-verlet integration.
 
  ~~~c++
- 
- int steps = 200000;
- double t_end = 2*3.1415*sqrt(6371000.0/9.81);
- double dt = t_end / steps;
+//Calculate 1 circular orbit at earth radius. Use 1000 steps.
+int steps = 1000;
+double dt= 2 * 3.141592 * sqrt(x[2] / 9.81997) / steps;
 
-Vector4d xo, velo, acco; //Last timestep position/velocity/acceleration.
-    
- for (int i = 0; i < steps; i++) {
-     acco = acc;
-     velo = vel;
-     xo = x;
-     ag.step_velocity_verlet(x, vel, acc, std::make_tuple(xo, velo, acco), dt, 1e-6); //x,vel,acc is passed by reference and overwritten.
- }
+for (int i = 0; i < steps; i++) {
+    velo = velocity;
+    xo = x;
+
+
+    // Make one step using RungeKutta4
+    ag.step_rk4(x, velocity, std::make_tuple(xo, velo), dt);
+
+    //Alternatively, use implicit midpoint rule
+    //auto [err, niter] = ag.step_implicit_midpoint(x, velocity, std::make_tuple(xo, velo), dt, 1e-3);
+
+
+    cout << x[0]/c_c<<", "<<x[1]<<", "<<x[2]<<", "<<x[3] << endl;
+
+}
  ~~~   
 
 ### Use your own numerical methods
