@@ -102,8 +102,9 @@ J=Matrix4d;
 Vector4var acc = calculate_acc(x,v);
 for (size_t i = 0; i < 4; i++)
     J.row(i) = gradient(acc, x);
-    
-///////////////
+
+~~~
+~~~c++
 
 // Jacobian(acc wrt v)
 J=Matrix4d;
@@ -112,7 +113,8 @@ for (size_t i = 0; i < 4; i++)
     J.row(i) = gradient(acc, v);
     
     
-//////////////
+~~~
+~~~c++
 
 //Jacobian (acc wrt x and v)
 
