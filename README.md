@@ -39,6 +39,10 @@ Matrix4var schwarzschild_cart(const Vector4var& x) {
     return AutoGeodesics::Metrics::schwarzschild_cartesian(x, mass, x0);
 }
 
+int main(){
+
+Vector4d x,velocity;
+
 // Setup. proper_time=false. Use coordinate time.
 AutoGeodesics ag = AutoGeodesics(false);
 
@@ -51,11 +55,14 @@ Calculate the 4-acceleration for a set of velocity and position.
  ~~~c++
 
 
-Vector4d x = {0.0,6371000.0,0.0,0.0};
-Vector3d vel3 = {0.0,sqrt(9.81*6371000.0),0.0}
+ // Position y=Radius of Earth.
+ x = { 0.0,0.0,6371000.0,0.0 }; 
 
-Vector4d velocity = ag.setup_fourvelocity(x, vel3); //Turn velocity into 4-velocity.
-Vector4d acc = ag.calculate_acc(x, velocity);
+ // Function to setup all 4 components of velocity. Mostly useful for proper_time=true.
+ velocity = ag.setup_fourvelocity(x, Vector3d({ 0.0,0.0,0.0 })); 
+
+ //Calculates acceleration. (0 component included).
+ Vector4d acc = ag.calculate_acc(x, velocity);
 ~~~  
 ### Integrate the Geodesics Equation...
 Built-in methods lets you calculate the next position/velocity. The Geodesic Equation can be integrated using velocity-verlet integration.
