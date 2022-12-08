@@ -103,23 +103,30 @@ Vector4var acc = calculate_acc(x,v);
 
 //Jacobian (acc wrt x)
 for (size_t i = 0; i < 4; i++)
-    J.row(i) = gradient(resids[i], x);
-  
+    J.row(i) = gradient(acc, x);
+    
+///////
+///////
+
 J=Matrix4d;
 // Jacobian(acc wrt v)
 for (size_t i = 0; i < 4; i++)
-    J.row(i) = gradient(resids[i], v);
+    J.row(i) = gradient(acc, v);
   
-Vector4var acc = calculate_acc(const Vector<var,8> x){
+Vector4var calculate_acc(const Vector<var,8> x){
     return calculate_acc(x(seq(0,4),x(seq(4,last));
 }
 
+///////
+///////
+
 J=Matrix<double,4,8>
-//Jacobian (acc wrt x)
 
 Vector<var,8> xx;
 xx << x[0],x[1],x[2],x[3],v[0],v[1],v[2],v[3];
+Vector4var acc = calculate_acc(xx);
+
 for (size_t i = 0; i < 4; i++)
-    J.row(i) = gradient(resids[i], xx);
+    J.row(i) = gradient(acc, xx);
 ~~~
 
