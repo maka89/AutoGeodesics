@@ -215,6 +215,7 @@ void AutoGeodesicsBase::get_christoffel(std::array<Matrix4d, 4> &chri_o,std::arr
     for (size_t i = 0; i < 4; i++)
         dmetinv[i] = -metinv * dmetric[i] * metinv;
 
+    // [u,i,k,l]. Christoffel symbol (i,k,l) differentiated wrt. x[u].
     std::array<std::array<Matrix4d, 4>, 4> dchris;
     for (size_t u = 0; u < 4; u++) {
         for (size_t i = 0; i < 4; i++) {
