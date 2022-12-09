@@ -90,43 +90,12 @@ for (int i = 0; i < steps; i++) {
  ~~~   
 
 ### Use your own numerical methods
-Common integration schemes , like leapfrog and velocity verlet, require implicit methods for calculating the velocity  $v_{i+1} = f(v_{i+1})$. 
-Efficiently solving these equations, require the acceleration and the jacobian of the acceleration wrt. the velocity.
-The class has methods for calculating the jacobian.
+The class has methods for calculating the jacobian of the acceleration wrt. position and velocity. This is needed for integrating the geodesics equation with implicit methods like the midpoint rule.
 
-The function `Vector4var AutoGeodesics::calculate_acc(const Vector4var& x, const Vector4var& velocity)` function uses c++ autodiff functions. The Jacobian of the acceleration can be calculated wrt. positiono or velocity
 
+The following function is used to calculate the acceleration and its jacobian.
 ~~~c++
-//Jacobian (acc wrt x)
-J=Matrix4d;
-Vector4var acc = calculate_acc(x,v);
-for (size_t i = 0; i < 4; i++)
-    J.row(i) = gradient(acc, x);
-
+tuple<Vector4d, Matrix<double, 4, 8>> calculate_acc_jac(const Vector<double, 8>& inp);
 ~~~
-~~~c++
-
-// Jacobian(acc wrt v)
-J=Matrix4d;
-Vector4var acc = calculate_acc(x,v);
-for (size_t i = 0; i < 4; i++)
-    J.row(i) = gradient(acc, v);
-    
-    
-~~~
-~~~c++
-
-//Jacobian (acc wrt x and v)
-
-Vector4var calculate_acc(const Vector<var,8> x){
-    return calculate_acc(x(seq(0,4),x(seq(4,last));
-}
-
-J=Matrix<double,4,8>
-Vector<var,8> xx = {x[0],x[1],x[2],x[3],v[0],v[1],v[2],v[3]};
-Vector4var acc = calculate_acc(xx);
-
-for (size_t i = 0; i < 4; i++)
-    J.row(i) = gradient(acc, xx);
-~~~
+where `inp << x,velocity;`
 
