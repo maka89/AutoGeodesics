@@ -18,31 +18,37 @@ class AutoGeodesicsBase
 {
 protected:
 
-    Vector4var get_acc(const std::array<Matrix4var, 4> &chr, const Vector4var& velocity);
-    std::array<Matrix4var, 4> get_christoffel(const VectorXvar &vmetric, const MatrixXvar &vjacobian);
+
 
     static VectorXvar matrix_to_vector(const Matrix4var& x);
     static Matrix4var vector_to_matrix(const VectorXvar& x);
 
     static VectorXvar metricfn2(const Vector4var& x, Matrix4var(*fn)(const Vector4var&));
     Matrix4var(*metfn_ptr)(const Vector4var& x);
-    std::array<Matrix4var, 4> calculate_christoffel(const Vector4var& x);
-    static var dotdot( const Matrix4var& m, const Vector4var& v, bool symmetric = true);
    
+    //NEWSTUFF
+    std::tuple<std::array<Matrix4d, 4>, std::array<std::array<Matrix4d, 4>, 4> > calculate_christoffeld(const Vector4var& x);
+    std::array<Matrix4d, 4> calculate_christoffel(const Vector4var& x);
+
+    void get_christoffel(std::array<Matrix4d, 4>& chri_o, const VectorXd& vmetric, const MatrixXd& vjacobian);
+    void get_christoffel(std::array<Matrix4d, 4>& chri_o, std::array<std::array<Matrix4d, 4>, 4>& dchri_o, const VectorXd& vmetric, const MatrixXd& vjacobian, const std::array<std::array<VectorXd, 4>, 4> &dvjac);
+    Vector4d get_acc(const std::array<Matrix4d, 4>& chr, const Vector4d& velocity);
+    std::tuple<Vector4d, Matrix<double, 4, 8>> calculate_acc_jac(const Vector<double, 8>& inp);
+    Matrix4d vector_to_matrixd(const VectorXd& x);
+
+
     bool proper_time;
 
 public:
     AutoGeodesicsBase() :metfn_ptr(NULL),proper_time(true) {};
     AutoGeodesicsBase(bool proper_time) :metfn_ptr(NULL), proper_time(proper_time) { };
-
+    Vector4d calculate_acc(const Vector4d& x, const Vector4d& v);
     Vector4d setup_fourvelocity(const Vector4d &x, const Vector3d &v);
-    Vector4d calculate_acc(const Vector4d &x, const Vector4d &velocity );
-    Vector4var calculate_acc(const Vector4var& x, const Vector4var& velocity);
 
     void setMetFn(Matrix4var(*metfn_ptr)(const Vector4var& x)) { this->metfn_ptr = metfn_ptr; };
 
     
-
+    
     
 
 };
@@ -54,7 +60,9 @@ public:
     std::tuple<double, int> step_implicit_midpoint(Vector4d& x, Vector4d &v,  const std::tuple<Vector4d, Vector4d>& x_v_old, const double& dt, const double tol=1e-8);
     void step_rk4(Vector4d& x, Vector4d& v, const std::tuple<Vector4d, Vector4d>& x_v_old, const double& dt);
     class Metrics;
+
     
+
 private:
     void implicit_midpoint_resids(VectorXd& res, MatrixXd& J, const VectorXd& now, const VectorXd& old, const double& dt);
     Vector<double, 8> rk_f(const Vector<double, 8>& d);

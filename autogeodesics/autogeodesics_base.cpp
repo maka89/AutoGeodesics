@@ -5,7 +5,7 @@ inline VectorXvar AutoGeodesicsBase::metricfn2(const Vector4var& x,Matrix4var(*f
     return matrix_to_vector(fn(x));
 }
 
-
+/*
 inline VectorXvar AutoGeodesicsBase::matrix_to_vector(const Matrix4var& x) {
     VectorXvar v(16);
 
@@ -18,7 +18,6 @@ inline VectorXvar AutoGeodesicsBase::matrix_to_vector(const Matrix4var& x) {
     }
     return v;
 }
-
 
 
 Matrix4var AutoGeodesicsBase::vector_to_matrix(const VectorXvar& x) {
@@ -36,74 +35,72 @@ Matrix4var AutoGeodesicsBase::vector_to_matrix(const VectorXvar& x) {
     return m;
 }
 
-std::array<Matrix4var, 4> AutoGeodesicsBase::get_christoffel(const VectorXvar &vmetric, const MatrixXvar &vjacobian) {
-    Matrix4var metric;
-    metric = vector_to_matrix(vmetric);
 
 
+Matrix4d AutoGeodesicsBase::vector_to_matrixd(const VectorXd& x) {
+    Matrix4d m;
 
-    std::array<Matrix4var, 4> dmetric;
-    for (size_t i = 0; i < 4; i++)
-        dmetric[i] = vector_to_matrix(vjacobian.col(i));
-    
-
-
-    std::array<Matrix4var, 4> christoffel;
-    Vector4var xx;
-    Matrix4var metinv = metric.inverse();
-
-    
+    size_t  k = 0;
     for (size_t i = 0; i < 4; i++) {
-        for (size_t k = 0; k < 4; k++) {
-            for (size_t l = 0; l < 4; l++) {
-
-                var tot = 0.0;
-                for (size_t m = 0; m < 4; m++) {
-                    tot += metinv(i, m) * (dmetric[l](m, k) + dmetric[k](m, l) - dmetric[m](k, l));
-                }
-                tot *= 0.5;
-                christoffel[i](k, l) = tot;
-            }
+        for (size_t j = 0; j < 4; j++) {
+            m(i, j) = x[k];
+            k++;
         }
     }
 
-    
-    return christoffel;
-}
+
+    return m;
+}*/
 
 
-var AutoGeodesicsBase::dotdot(const Matrix4var &m, const Vector4var &v,bool symmetric) {
+inline VectorXvar AutoGeodesicsBase::matrix_to_vector(const Matrix4var& x) {
+    VectorXvar v(10);
 
-    var tmp = 0.0;
-    if (symmetric) {
-        for (size_t i = 0; i < 4; i++)
-            tmp += m(i, i) * v[i] * v[i];
-        for (size_t i = 0; i < 4; i++) {
-            for (size_t j = i + 1; j < 4; j++)
-                tmp += 2.0 * m(i, j) * v[i] * v[j];
+    size_t  k = 0;
+    for (size_t i = 0; i < 4; i++) {
+        for (size_t j = i; j < 4; j++) {
+            v[k] = x(i, j);
+            k++;
         }
-        return tmp;
     }
-    else
-        return v.transpose() * m * v;
-   
+    return v;
 }
 
-Vector4var AutoGeodesicsBase::get_acc(const std::array<Matrix4var, 4> &chr,const Vector4var &velocity) {
-    Vector4var acc;
-    acc = Vector4var::Zero();
-    var tmp = dotdot(chr[0], velocity);
-    acc[0] = -tmp;
-    for (size_t i = 1; i < 4; i++)
-        acc[i] = -dotdot(chr[i], velocity);
 
-    if (!this->proper_time) {
-        for (size_t i = 0; i < 4; i++)
-            acc[i] += tmp * (velocity[i]/c_c);
+Matrix4var AutoGeodesicsBase::vector_to_matrix(const VectorXvar& x) {
+    Matrix4var m;
+
+    size_t  k = 0;
+    for (size_t i = 0; i < 4; i++) {
+        for (size_t j = i; j < 4; j++) {
+            m(i, j) = x[k];
+            m(j, i) = x[k];
+            k++;
+        }
     }
-    return acc;
 
+
+    return m;
 }
+
+
+
+Matrix4d AutoGeodesicsBase::vector_to_matrixd(const VectorXd& x) {
+    Matrix4d m;
+
+    size_t  k = 0;
+    for (size_t i = 0; i < 4; i++) {
+        for (size_t j = i; j < 4; j++) {
+            m(i, j) = x[k];
+            m(j, i) = x[k];
+            k++;
+        }
+    }
+
+
+    return m;
+}
+
 
 
 Vector4d AutoGeodesicsBase::setup_fourvelocity(const Vector4d& x, const Vector3d& velocity) {
@@ -121,21 +118,6 @@ Vector4d AutoGeodesicsBase::setup_fourvelocity(const Vector4d& x, const Vector3d
             vsum += metric3(i, j) * vc(i) * vc(j);
         }
     }
-    /*
-    if (input_is_four_velocity) {
-        double a = metric(0, 0);
-        double b = c0sum;
-        double c = vsum - 1.0;
-
-        double lambda = 0.5 * (-b + sqrt(b * b - 4.0 * a * c)) / a;
-        
-        if (this->proper_time) {
-            vv << lambda * c_c, velocity[0], velocity[1], velocity[2];
-        }
-        else {
-            vv << c_c, velocity[0] * lambda, velocity[1] * lambda, velocity[2] * lambda;
-        }
-    }*/
 
    
     vv << c_c, velocity[0], velocity[1], velocity[2];
@@ -153,35 +135,224 @@ Vector4d AutoGeodesicsBase::setup_fourvelocity(const Vector4d& x, const Vector3d
     
     return vv;
 }
-Vector4d AutoGeodesicsBase::calculate_acc(const Vector4d& x, const Vector4d& velocity) {
 
-    Vector4var xx;
-    xx << x[0], x[1], x[2], x[3];
-    return calculate_acc(xx, velocity.cast<var>()).cast<double>();
+void AutoGeodesicsBase::get_christoffel(std::array<Matrix4d, 4> &chri_o, const VectorXd& vmetric, const MatrixXd& vjacobian) {
 
+
+    Matrix4d metric;
+    metric = vector_to_matrixd(vmetric);
+
+
+
+    std::array<Matrix4d, 4> dmetric;
+    for (size_t i = 0; i < 4; i++)
+        dmetric[i] = vector_to_matrixd(vjacobian.col(i));
+
+
+    std::array<Matrix4d, 4> christoffel;
+    Vector4d xx;
+    Matrix4d metinv = metric.inverse();
+
+
+    for (size_t i = 0; i < 4; i++) {
+        for (size_t k = 0; k < 4; k++) {
+            for (size_t l = 0; l < 4; l++) {
+
+                double tot = 0.0;
+                for (size_t m = 0; m < 4; m++) {
+                    tot += metinv(i, m) * (dmetric[l](m, k) + dmetric[k](m, l) - dmetric[m](k, l));
+                }
+                tot *= 0.5;
+                christoffel[i](k, l) = tot;
+            }
+        }
+    }
+    chri_o = christoffel;
+    return;
 }
 
-Vector4var AutoGeodesicsBase::calculate_acc(const Vector4var& x, const Vector4var& velocity) {
+void AutoGeodesicsBase::get_christoffel(std::array<Matrix4d, 4> &chri_o,std::array<std::array<Matrix4d, 4>, 4> &dchri_o,const VectorXd& vmetric, const MatrixXd& vjacobian, const std::array<std::array<VectorXd,4>,4> &dvjac) {
+    Matrix4d metric;
+    metric = vector_to_matrixd(vmetric);
 
 
-    std::array<Matrix4var, 4> christoffel = calculate_christoffel(x);
-    Vector4var acc4 = get_acc(christoffel, velocity);
-    return acc4;
 
-}
+    std::array<Matrix4d, 4> dmetric;
+    for (size_t i = 0; i < 4; i++)
+        dmetric[i] = vector_to_matrixd(vjacobian.col(i));
 
-std::array<Matrix4var, 4> AutoGeodesicsBase::calculate_christoffel(const Vector4var& x) {
-    VectorXvar vmetric = metricfn2(x,this->metfn_ptr);
-    Matrix<var, 16, 4> J = Matrix<var, 16, 4>::Zero();
-    for (size_t i = 0; i < 16; i++) {
-        auto tmp = derivatives(vmetric(i), wrt(x[0],x[1],x[2],x[3]));
-        for(size_t j=0;j<4;j++)
-            J(i, j) = tmp[j];
+   
+    std::array<Matrix4d, 4> christoffel;
+    Vector4d xx;
+    Matrix4d metinv = metric.inverse();
+
+
+    for (size_t i = 0; i < 4; i++) {
+        for (size_t k = 0; k < 4; k++) {
+            for (size_t l = 0; l < 4; l++) {
+
+                double tot = 0.0;
+                for (size_t m = 0; m < 4; m++) {
+                    tot += metinv(i, m) * (dmetric[l](m, k) + dmetric[k](m, l) - dmetric[m](k, l));
+                }
+                tot *= 0.5;
+                christoffel[i](k, l) = tot;
+            }
+        }
+    }
+    chri_o = christoffel;
+
+    // DERIVATIVE
+        
+
+    std::array<std::array<Matrix4d, 4>, 4> ddmetric;
+    for (size_t i = 0; i < 4; i++) {
+        for (size_t j = 0; j < 4; j++)
+            ddmetric[i][j] = vector_to_matrixd(dvjac[i][j]);
     }
 
-    std::array<Matrix4var, 4> christoffel;
-    christoffel = get_christoffel(vmetric, J);
+    std::array<Matrix4d, 4> dmetinv;
+    for (size_t i = 0; i < 4; i++)
+        dmetinv[i] = -metinv * dmetric[i] * metinv;
+
+    std::array<std::array<Matrix4d, 4>, 4> dchris;
+    for (size_t u = 0; u < 4; u++) {
+        for (size_t i = 0; i < 4; i++) {
+            for (size_t k = 0; k < 4; k++) {
+                for (size_t l = 0; l < 4; l++) {
+
+                    double tot = 0.0;
+                    for (size_t m = 0; m < 4; m++) {
+                        tot += dmetinv[u](i, m) * (dmetric[l](m, k) + dmetric[k](m, l) - dmetric[m](k, l));
+                    }
+                    tot *= 0.5;
+                    dchris[u][i](k, l) = tot;
+
+                    tot = 0.0;
+                    for (size_t m = 0; m < 4; m++) {
+                        tot += metinv(i, m) * (ddmetric[u][l](m, k) + ddmetric[u][k](m, l) - ddmetric[u][m](k, l));
+                    }
+                    tot *= 0.5;
+                    dchris[u][i](k, l) += tot;
+
+                }
+            }
+        }
+    }
+
+    dchri_o = dchris;
+    
+    return;
+}
+
+std::tuple<std::array<Matrix4d, 4>, std::array<std::array<Matrix4d, 4>, 4> > AutoGeodesicsBase::calculate_christoffeld(const Vector4var& xx) {
+    Vector4var x = xx;
+    VectorXvar vmetric = metricfn2(x, this->metfn_ptr);
+    Matrix<double, 10, 4> J = Matrix<double, 10, 4>::Zero();
+    std::array<std::array<VectorXd, 4>, 4> H;
+
+    for (size_t i = 0; i < 4; i++)for (size_t j = 0; j < 4; j++)H[i][j] = Vector<double, 10>::Zero();
+
+    for (size_t i = 0; i < 10; i++) {
+        auto tmp = derivativesx(vmetric(i), wrt(x[0], x[1], x[2], x[3]));
+        for (size_t j = 0; j < 4; j++)
+            J(i, j) = (double)tmp[j];
+        
+        for (size_t k = 0; k < 4; k++) {
+            auto h = derivatives(tmp[k], wrt(x[0], x[1], x[2], x[3]));
+            for (size_t j = 0; j < 4; j++)
+                H[k][j](i) = (double)h[j];
+        }
+
+    }
+
+    std::array<std::array<Matrix4d, 4>, 4> dchris;
+    std::array<Matrix4d, 4> christoffel;
+    get_christoffel(christoffel,dchris,vmetric.cast<double>(), J,H);
+    return std::make_tuple(christoffel,dchris);
+
+
+}
+std::array<Matrix4d, 4> AutoGeodesicsBase::calculate_christoffel(const Vector4var& x) {
+    VectorXvar vmetric = metricfn2(x, this->metfn_ptr);
+    Matrix<double, 10, 4> J = Matrix<double, 10, 4>::Zero();
+    
+
+    for (size_t i = 0; i < 10; i++) {
+        auto tmp = derivativesx(vmetric(i), wrt(x[0], x[1], x[2], x[3]));
+        for (size_t j = 0; j < 4; j++)
+            J(i, j) = (double)tmp[j];
+    }
+
+    std::array<Matrix4d, 4> christoffel;
+    get_christoffel(christoffel,  vmetric.cast<double>(), J);
     return christoffel;
+}
+
+
+Vector4d AutoGeodesicsBase::get_acc(const std::array<Matrix4d, 4>& chr, const Vector4d& velocity) {
+    Vector4d acc;
+    acc = Vector4d::Zero();
+    double tmp = velocity.transpose() * chr[0] * velocity;
+    acc[0] = -tmp;
+    for (size_t i = 1; i < 4; i++)
+        acc[i] = -velocity.transpose()*chr[i]*velocity;
+
+    if (!this->proper_time) {
+        for (size_t i = 0; i < 4; i++)
+            acc[i] += tmp * (velocity[i] / c_c);
+    }
+    return acc;
+
+}
+Vector4d AutoGeodesicsBase::calculate_acc(const Vector4d& x, const Vector4d& v) {
+    std::array<Matrix4d, 4> chr = calculate_christoffel(x);
+    return get_acc(chr, v);
+}
+std::tuple<Vector4d,Matrix<double,4,8>> AutoGeodesicsBase::calculate_acc_jac( const Vector<double,8> &inp) {
+    Vector4d x, velocity;
+    x << inp[0], inp[1], inp[2], inp[3];
+    velocity << inp[4], inp[5], inp[6], inp[7];
+
+    auto [christoffel , dchris] = calculate_christoffeld(x);
+    Vector4d acc4 = get_acc(christoffel, velocity);
+    Matrix<double, 4, 8> jac;
+
+    for (size_t i = 0; i < 4; i++) {
+        for (size_t j = 0; j < 4; j++) {
+            jac(i, j) = -velocity.transpose() * dchris[j][i] * velocity;
+        }
+    }
+
+    if (!proper_time) {
+        for (size_t i = 0; i < 4; i++) {
+            for (size_t j = 0; j < 4; j++) {
+                double tmp = velocity.transpose() * dchris[j][0] * velocity;
+                jac(i, j) += tmp* (velocity[i] / c_c);
+            }
+        }
+    }
+
+    //Velocity
+    for (size_t i = 0; i < 4; i++) {
+        auto tmp = -2.0 * christoffel[i] * velocity;
+        for (size_t j = 0; j < 4; j++) {
+            jac(i, 4 + j) = tmp[j];
+        }
+    }
+    if (!proper_time) {
+        double t0 = (velocity.transpose() * christoffel[0] * velocity);
+        t0 /= c_c;
+        for (size_t i = 0; i < 4; i++) {
+            auto tmp = 2.0 * christoffel[0] * velocity * (velocity[i] / c_c);
+            for (size_t j = 0; j < 4; j++) {
+                jac(i, 4 + j) += tmp[j];
+            }
+
+            jac(i, i) += t0;
+        }
+    }
+    return std::make_tuple(acc4, jac);
 
 
 }

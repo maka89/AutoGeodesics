@@ -26,8 +26,8 @@ string format_method(bool rk) {
 }
 
 int main(int argc,char *argv[]) {
-    bool rk = true;
-    int steps = 1000;
+    bool rk = false;
+    int steps = 5000;
     if (argc > 1) {
     
         string s;
@@ -72,7 +72,7 @@ int main(int argc,char *argv[]) {
         if(rk)
             ag.step_rk4(x, velocity, std::make_tuple(xo, velo), dt);
         else
-            auto [err, niter] = ag.step_implicit_midpoint(x, velocity, std::make_tuple(xo, velo), dt, 1e-3);
+            auto [err, niter] = ag.step_implicit_midpoint(x, velocity, std::make_tuple(xo, velo), dt, 1e-6);
 
 
         //std::cout << x[0] / c_c << ", " << x[1] << ", " << x[2] << ", " << x[3] << std::endl;

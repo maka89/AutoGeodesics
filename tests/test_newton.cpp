@@ -23,7 +23,7 @@ inline Matrix4var schwarzschild_cart(const Vector4var &x) {
 }
 
 
-std::vector<std::array<double,6>> run_gr() {
+std::vector<std::array<double,6>> run_gr(int steps) {
     Vector4d xo, velo;
     
     AutoGeodesics ag = AutoGeodesics(false);
@@ -33,7 +33,6 @@ std::vector<std::array<double,6>> run_gr() {
     double v = sqrt(9.81997 * x[2]);
     Vector4d velocity = ag.setup_fourvelocity(x, Vector3d({ v,0.0,0.0 })); //Turn velocity into 4-velocity.
     
-    int steps = 100;
     double t_end = 2 * 3.14159265 * sqrt(x[2] / 9.81997);
     double dt = t_end / steps;
 
@@ -44,8 +43,9 @@ std::vector<std::array<double,6>> run_gr() {
         velo = velocity;
         xo = x;
 
-        auto [err,niter] = ag.step_implicit_midpoint(x, velocity, std::make_tuple(xo,velo), dt, 1e-9);
-      
+        auto [err,niter] = ag.step_implicit_midpoint(x, velocity, std::make_tuple(xo,velo), dt, 1e-3);
+        //std::cout << err << ", " << niter << std::endl;
+        //ag.step_rk4(x, velocity, std::make_tuple(xo, velo), dt);
 
         std::array<double, 6> tmp;
         tmp = { (double)i+1,(i+1) * dt,x[0]/c_c,x[1] ,x[2],x[3] };
@@ -57,7 +57,7 @@ std::vector<std::array<double,6>> run_gr() {
     return data;
 }
 
-std::vector<std::array<double, 6>> run_newton() {
+std::vector<std::array<double, 6>> run_newton(int steps) {
     Vector4d xo, velo;
 
     Newton ag = Newton();
@@ -67,7 +67,6 @@ std::vector<std::array<double, 6>> run_newton() {
 
     Vector4d velocity = { 0.0,v,0.0,0.0 };
 
-    int steps = 100;
     double t_end = 2 * 3.14159265 * sqrt(x[2] / 9.81997);
     double dt = t_end / steps;
 
@@ -78,8 +77,8 @@ std::vector<std::array<double, 6>> run_newton() {
         velo = velocity;
         xo = x;
 
-        auto [err, niter] = ag.step_implicit_midpoint(x, velocity, std::make_tuple(xo, velo), dt, 1e-9);
-
+        //auto [err, niter] = ag.step_implicit_midpoint(x, velocity, std::make_tuple(xo, velo), dt, 1e-9);
+        ag.step_rk4(x, velocity, std::make_tuple(xo, velo), dt);
         std::array<double, 6> tmp;
         tmp = { (double)i + 1,(i + 1) * dt,(i + 1) * dt,x[1] ,x[2],x[3] };
         data.push_back(tmp);
@@ -94,12 +93,12 @@ int main() {
     using namespace std::chrono;
 
     auto start = high_resolution_clock::now();
-    std::vector<std::array<double, 6>> data1 = run_gr();
+    std::vector<std::array<double, 6>> data1 = run_gr(200000);
     auto duration = duration_cast<microseconds>(high_resolution_clock::now() - start);
     std::cerr << "GR duration: " << duration.count() * 1e-6 << std::endl;
 
     start = high_resolution_clock::now();
-    std::vector<std::array<double, 6>> data2 = run_newton();
+    std::vector<std::array<double, 6>> data2 = run_newton(200000);
     duration = duration_cast<microseconds>(high_resolution_clock::now() - start);
     std::cerr << "Newton duration: " << duration.count() * 1e-6 << std::endl;
 
@@ -117,6 +116,9 @@ int main() {
             maxert = abs(data1[i][2] - data2[i][2]);
 
     }
+
+    std::cout << data1[data1.size() - 1][3] << ", " << data1[data1.size() - 1][4] << ", " << data1[data1.size() - 1][5] << std::endl;
+    std::cout << data2[data2.size() - 1][3] << ", " << data2[data2.size() - 1][4] << ", " << data2[data2.size() - 1][5] << std::endl;
     std::cout << "max error" << maxer<<std::endl;
     std::cout << "max error time" << maxert << std::endl;
 }

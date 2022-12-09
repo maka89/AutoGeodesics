@@ -43,11 +43,11 @@ int main() {
 
         
         // Make one step using RungeKutta4
-        ag.step_rk4(x, velocity, std::make_tuple(xo, velo), dt);
+        //ag.step_rk4(x, velocity, std::make_tuple(xo, velo), dt);
 
 
         //Alternatively, use implicit midpoint rule
-        //auto [err, niter] = ag.step_implicit_midpoint(x, velocity, std::make_tuple(xo, velo), dt, 1e-3);
+        auto [err, niter] = ag.step_implicit_midpoint(x, velocity, std::make_tuple(xo, velo), dt, 1e-6);
 
 
         std::cout << x[0]/c_c<<", "<<x[1]<<", "<<x[2]<<", "<<x[3] << std::endl;

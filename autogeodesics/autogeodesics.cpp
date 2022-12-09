@@ -1,45 +1,60 @@
 #pragma once
 #include "autogeodesics.h"
 #include <iostream>
+void AutoGeodesics::implicit_midpoint_resids(VectorXd& res, MatrixXd& J, const VectorXd& nowd, const VectorXd& old, const double& dt) {
 
-void AutoGeodesics::implicit_midpoint_resids(VectorXd& res, MatrixXd& J, const VectorXd &nowd, const VectorXd &old, const double &dt) {
-
-	Vector<var, 8> now;
+	Vector<double, 8> now;
 	for (size_t i = 0; i < 8; i++)
 		now[i] = nowd[i];
-	Vector4var xnow = { now[0],now[1],now[2],now[3] };
-	Vector4var xold = { old[0],old[1],old[2],old[3] };
-	Vector4var acc;
+	Vector4d xnow = { now[0],now[1],now[2],now[3] };
+	Vector4d xold = { old[0],old[1],old[2],old[3] };
+	Vector4d acc;
 
-	Vector4var u = { 0.5 * (now[4] + old[4]),0.5 * (now[5] + old[5]),0.5 * (now[6] + old[6]),0.5 * (now[7] + old[7]) };
+	Vector4d u = { 0.5 * (now[4] + old[4]),0.5 * (now[5] + old[5]),0.5 * (now[6] + old[6]),0.5 * (now[7] + old[7]) };
 
-	Vector<var, 8> resids;
+	Vector<double, 8> resids;
 	if (this->proper_time) {
 		for (size_t i = 0; i < 4; i++)
 			resids[i] = now[i] - old[i] - 0.5 * dt * (now[i + 4] + old[i + 4]);
 
-		acc = calculate_acc(0.5 * (xnow + xold),u);
+		auto [acc, jacc] = calculate_acc_jac(0.5 * (now + old));
+
+
 		for (size_t i = 0; i < 4; i++)
-			resids[4 + i] = now[4 + i] - old[4 + i] - acc[i]*dt;
-	
+			resids[4 + i] = now[4 + i] - old[4 + i] - acc[i] * dt;
+
+		for (size_t i = 0; i < 4; i++) {
+			J(i, i) = 1.0;
+			J(i, i + 4) = -0.5 * dt;
+		}
+		for (size_t i = 0; i < 4; i++) {
+			J.row(4 + i) = -jacc.row(i)*dt;
+			J(4 + i, 4 + i) += 1.0;
+		}
+
 	}
 	else {
 
 
-		resids[0] = now[0] - old[0] - c_c * dt;
-		for (size_t i = 1; i < 4; i++)
+		for (size_t i = 0; i < 4; i++)
 			resids[i] = now[i] - old[i] - 0.5 * dt * (now[i + 4] + old[i + 4]);
 
-		acc = calculate_acc(0.5 * (xnow + xold), u);
+		auto[acc,jacc] = calculate_acc_jac(0.5 * (now+old));
 
-		resids[4] = now[4] - old[4];
-		for (size_t i = 1; i < 4; i++)
+		for (size_t i = 0; i < 4; i++)
 			resids[4 + i] = now[4 + i] - old[4 + i] - acc[i] * dt;
-
+		
+		J = Matrix<double, 8, 8>::Zero();
+		for (size_t i = 0; i < 4; i++) {
+			J(i, i) = 1.0;
+			J(i, i + 4) = -0.5 * dt;
+		}
+		for (size_t i = 0; i < 4; i++) {
+			J.row(4 + i) = -jacc.row(i)*dt;
+			J(4 + i, 4 + i) += 1.0;
+		}
 	}
-	res = resids.cast<double>();
-	for (size_t i = 0; i < 8; i++)
-		J.row(i) = gradient(resids[i], now);
+	res = resids;
 }
 
 Vector<double,8> AutoGeodesics::rk_f(const Vector<double, 8> &d) {
@@ -81,11 +96,14 @@ std::tuple<double,int> AutoGeodesics::step_implicit_midpoint(Vector4d& x, Vector
 
 	VectorXd dx, errs;
 
-	VectorXd resids;
-	MatrixXd J;
+	VectorXd resids,resids2;
+	MatrixXd J,J2;
 
 	resids = Vector<double, 8>::Zero();
 	J = Matrix<double, 8, 8>::Zero();
+
+	resids2 = Vector<double, 8>::Zero();
+	J2 = Matrix<double, 8, 8>::Zero();
 
 	Vector4d x_old = std::get<0>(x_v_old);
 	Vector4d v_old = std::get<1>(x_v_old);
@@ -114,22 +132,24 @@ std::tuple<double,int> AutoGeodesics::step_implicit_midpoint(Vector4d& x, Vector
 	int n = 1;
 	for (size_t i = 0; i < 10; i++) {
 
-
-		implicit_midpoint_resids(resids, J, nowd,oldd, dt);
-
-		dx = J.llt().solve(-resids);
-		nowd = nowd + dx;
-
-		errs = J * dx - resids;
 		err = -1.0;
 		for (size_t j = 0; j < 8; j++) {
-			if (err < abs(errs[j])) 
-				err = abs(errs[j]);
-			
-		}
+			if (err < abs(resids[j]))
+				err = abs(resids[j]);
 
-		if (err < tol) 
+		}
+		if (err < tol && i >0)
 			break;
+
+		implicit_midpoint_resids(resids, J, nowd, oldd, dt);
+
+		dx = -J.inverse() * resids;
+
+		nowd = nowd + dx;
+
+		
+
+		
 		n += 1;
 	}
 	for (size_t i = 0; i < 4; i++) {
@@ -139,3 +159,46 @@ std::tuple<double,int> AutoGeodesics::step_implicit_midpoint(Vector4d& x, Vector
 	return std::make_tuple(err,n);
 };
 
+
+/*
+
+void AutoGeodesics::implicit_midpoint_resids(VectorXd& res, MatrixXd& J, const VectorXd& nowd, const VectorXd& old, const double& dt) {
+
+	Vector<var, 8> now;
+	for (size_t i = 0; i < 8; i++)
+		now[i] = nowd[i];
+	Vector4var xnow = { now[0],now[1],now[2],now[3] };
+	Vector4var xold = { old[0],old[1],old[2],old[3] };
+	Vector4var acc;
+
+	Vector4var u = { 0.5 * (now[4] + old[4]),0.5 * (now[5] + old[5]),0.5 * (now[6] + old[6]),0.5 * (now[7] + old[7]) };
+
+	Vector<var, 8> resids;
+	if (this->proper_time) {
+		for (size_t i = 0; i < 4; i++)
+			resids[i] = now[i] - old[i] - 0.5 * dt * (now[i + 4] + old[i + 4]);
+
+		acc = calculate_acc(0.5 * (xnow + xold), u);
+		for (size_t i = 0; i < 4; i++)
+			resids[4 + i] = now[4 + i] - old[4 + i] - acc[i] * dt;
+
+	}
+	else {
+
+
+		resids[0] = now[0] - old[0] - c_c * dt;
+		for (size_t i = 1; i < 4; i++)
+			resids[i] = now[i] - old[i] - 0.5 * dt * (now[i + 4] + old[i + 4]);
+
+		acc = calculate_acc(0.5 * (xnow + xold), u);
+
+		resids[4] = now[4] - old[4];
+		for (size_t i = 1; i < 4; i++)
+			resids[4 + i] = now[4 + i] - old[4 + i] - acc[i] * dt;
+
+	}
+	res = resids.cast<double>();
+	for (size_t i = 0; i < 8; i++)
+		J.row(i) = gradient(resids[i], now);
+}
+*/
