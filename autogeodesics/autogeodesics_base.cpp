@@ -326,6 +326,7 @@ std::tuple<Vector4d,Matrix<double,4,8>> AutoGeodesicsBase::calculate_acc_jac( co
     }
 
     if (!proper_time) {
+        
         for (size_t i = 0; i < 4; i++) {
             for (size_t j = 0; j < 4; j++) {
                 double tmp = velocity.transpose() * dchris[j][0] * velocity;
@@ -350,7 +351,7 @@ std::tuple<Vector4d,Matrix<double,4,8>> AutoGeodesicsBase::calculate_acc_jac( co
                 jac(i, 4 + j) += tmp[j];
             }
 
-            jac(i, i) += t0;
+            jac(i, 4+ i) +=t0 ;
         }
     }
     return std::make_tuple(acc4, jac);

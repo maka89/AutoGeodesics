@@ -43,7 +43,7 @@ std::vector<std::array<double,6>> run_gr(int steps) {
         velo = velocity;
         xo = x;
 
-        auto [err,niter] = ag.step_implicit_midpoint(x, velocity, std::make_tuple(xo,velo), dt, 1e-3);
+        auto [err,niter] = ag.step_implicit_midpoint(x, velocity, std::make_tuple(xo,velo), dt, 1e-9);
         //std::cout << err << ", " << niter << std::endl;
         //ag.step_rk4(x, velocity, std::make_tuple(xo, velo), dt);
 
@@ -77,8 +77,10 @@ std::vector<std::array<double, 6>> run_newton(int steps) {
         velo = velocity;
         xo = x;
 
-        //auto [err, niter] = ag.step_implicit_midpoint(x, velocity, std::make_tuple(xo, velo), dt, 1e-9);
-        ag.step_rk4(x, velocity, std::make_tuple(xo, velo), dt);
+        auto [err, niter] = ag.step_implicit_midpoint(x, velocity, std::make_tuple(xo, velo), dt, 1e-9);
+        //std::cout << "Newton: "<< err << std::endl;
+
+        //ag.step_rk4(x, velocity, std::make_tuple(xo, velo), dt);
         std::array<double, 6> tmp;
         tmp = { (double)i + 1,(i + 1) * dt,(i + 1) * dt,x[1] ,x[2],x[3] };
         data.push_back(tmp);
@@ -93,12 +95,12 @@ int main() {
     using namespace std::chrono;
 
     auto start = high_resolution_clock::now();
-    std::vector<std::array<double, 6>> data1 = run_gr(200000);
+    std::vector<std::array<double, 6>> data1 = run_gr(200);
     auto duration = duration_cast<microseconds>(high_resolution_clock::now() - start);
     std::cerr << "GR duration: " << duration.count() * 1e-6 << std::endl;
 
     start = high_resolution_clock::now();
-    std::vector<std::array<double, 6>> data2 = run_newton(200000);
+    std::vector<std::array<double, 6>> data2 = run_newton(200);
     duration = duration_cast<microseconds>(high_resolution_clock::now() - start);
     std::cerr << "Newton duration: " << duration.count() * 1e-6 << std::endl;
 
