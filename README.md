@@ -6,7 +6,7 @@ The purpose of this project is to make it easy to calculate paths of test partic
 
 The project aims to do these things:
 - Calculates the acceleration of the test particle, given a metric and initial position/velocity.
-- Automatically calculates the next velocity/position for some popular integration schemes, such as velocity-verlet.
+- Automatically calculates the next velocity/position for some popular integration schemes, such as runge-kutta4 and the implicit midpoint rule.
 
 ## Dependencies
 Two header-only libraries:
