@@ -56,14 +56,15 @@ void AutoGeodesics::implicit_midpoint_resids(VectorXd& res, MatrixXd& J, const V
 	}
 	res = resids;
 }
-
+#include <iostream>
+using namespace std;
 Vector<double,8> AutoGeodesics::rk_f(const Vector<double, 8> &d) {
 	Vector<double, 8>tmp;
 	Vector4d x = { d[0],d[1],d[2],d[3] };
 	Vector4d v = { d[4],d[5],d[6],d[7] };
-
-	tmp(seq(0, 4)) = v;
-	tmp(seq(4, last)) = calculate_acc(x, v);
+	//tmp(seq(0, 4)) = v;
+	//tmp(seq(4, last)) = calculate_acc(x, v);
+	tmp << v, calculate_acc(x, v);
 	return tmp;
 }
 void AutoGeodesics::step_rk4(Vector4d& x, Vector4d& v, const std::tuple<Vector4d, Vector4d>& x_v_old, const double& dt) {
@@ -74,13 +75,13 @@ void AutoGeodesics::step_rk4(Vector4d& x, Vector4d& v, const std::tuple<Vector4d
 		old[i] = x_old[i];
 		old[i + 4] = v_old[i];
 	}
-
+	
 	Vector<double, 8> k1, k2, k3, k4;
 	k1 = rk_f(old);
 	k2 = rk_f(old + 0.5 * dt * k1);
 	k3 = rk_f(old + 0.5 * dt * k2);
 	k4 = rk_f(old + dt * k3);
-
+	
 	newd = old+dt*(k1 + 2.0 * k2 + 2.0 * k3 + k4) / 6.0;
 
 	for (size_t i = 0; i < 4; i++) {

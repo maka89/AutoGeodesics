@@ -71,11 +71,10 @@ void Newton::step_rk4(Vector4d& x, Vector4d& v, const std::tuple<Vector4d, Vecto
 
 Vector<double, 8> Newton::rk_f(const Vector<double, 8>& d) {
 	Vector<double, 8>tmp;
-	Vector4d x = { d[0],d[1],d[2],d[3] };
-	Vector4d v = { d[4],d[5],d[6],d[7] };
+	Vector<double, 4> x = { d[0],d[1],d[2],d[3] };
+	Vector<double, 4>v = { d[4],d[5],d[6],d[7] };
 
-	tmp(seq(0, 4)) = v;
-	tmp(seq(4, last)) = calculate_acceleration_newton(x);
+	tmp << v, calculate_acceleration_newton(x);
 	return tmp;
 }
 
