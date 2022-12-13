@@ -65,7 +65,7 @@ Calculate the 4-acceleration for a set of velocity and position.
  Vector4d acc = ag.calculate_acc(x, velocity);
 ~~~  
 ### Integrate the Geodesics Equation...
-Built-in methods lets you calculate the next position/velocity. The Geodesic Equation can be integrated using velocity-verlet integration.
+Built-in methods lets you calculate the next position/velocity. The Geodesic Equation can be integrated using Runge-Kutta4 method or the Implicit Midtpoint Rule.
 
  ~~~c++
 //Calculate 1 circular orbit at earth radius. Use 1000 steps.
