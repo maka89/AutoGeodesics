@@ -1,60 +1,63 @@
-#include <autodiff/reverse/var.hpp>
-#include <autodiff/reverse/var/eigen.hpp>
+#pragma once
 #include <tuple>
 #include <Eigen/Eigen>
-using namespace autodiff;
+#include <vector>
 using namespace Eigen;
-
+using namespace std;
 
 
 
 class Newton {
 
 public:
-    Newton() :potential(NULL) {};
-   
-	Vector4d calculate_acceleration_newton(const Vector4d &x);
-	void set_potential(var(*pot)(const Vector4var& x)) { this->potential = pot; }
+	Newton() { clear(); }
+	void clear() { this->masses.clear(); }
+	void add_mass(double mass, Vector3d r) { tuple<double,Vector3d> gg = make_tuple(mass, r); this->masses.push_back(gg);}
 
 
-	std::tuple<double, int> step_implicit_midpoint(Vector4d& x, Vector4d& v, const std::tuple<Vector4d, Vector4d>& x_v_old, const double& dt, const double tol = 1e-8);
-	void step_rk4(Vector4d& x, Vector4d& v, const std::tuple<Vector4d, Vector4d>& x_v_old, const double& dt);
+
+	std::tuple<double, int> step_implicit_midpoint(Vector3d& x, Vector3d& v, const std::tuple<Vector3d, Vector3d>& x_v_old, const double& dt, const double tol = 1e-8);
+	void step_rk4(Vector3d& x, Vector3d& v, const std::tuple<Vector3d, Vector3d>& x_v_old, const double& dt);
+
+	Vector3d calculate_acc_newton(const Vector3d& x);
+	tuple<Vector3d, Matrix3d> calculate_acc_jac_newton(const Vector3d& x);
+	tuple<Vector3d, Matrix3d> calculate_acc_jac_newton_numerical(const Vector3d& xx,double eps=1e-2);
 
 private:
 	void implicit_midpoint_resids(VectorXd& res, MatrixXd& J, const VectorXd& now, const VectorXd& old, const double& dt);
-	Vector4var calculate_acc_newton(const Vector4var& x);
-	Vector<double, 8> rk_f(const Vector<double, 8>& d);
-	var(*potential)(const Vector4var& x);
+	
+	Vector<double, 6> rk_f(const Vector<double, 6>& d);
+
+	vector<tuple<double, Vector3d>> masses;
 };
 
-Vector4var Newton::calculate_acc_newton(const Vector4var& xx) {
+Vector3d Newton::calculate_acc_newton(const Vector3d& xx) {
 	double g = 6.67430e-11;
 
-	var potential = -g*this->potential(xx);
-	Vector4var acc;
-	auto [a,b,c,d] = derivatives(potential, wrt(xx[0],xx[1],xx[2],xx[3]));
-	acc << a, b, c, d;
-	
+	Vector3d acc = { 0, 0, 0 };
+	for (auto it = this->masses.begin(); it != this->masses.end(); it++) {
+		Vector3d r0 = get<1>(*it);
+		double mass = get<0>(*it);
 
-    return acc;
+		Vector3d r = xx - r0;
+		double r2 = r.transpose().dot(r);
+		Vector3d er = r / sqrt(r2);
+		acc +=  -mass * g * er / r2;
+	}
+	return acc;
 }
 
-Vector4d Newton::calculate_acceleration_newton(const Vector4d &x) {
-	Vector4var vv;
-	vv << x[0], x[1], x[2], x[3];
-	return calculate_acc_newton(vv).cast<double>();
-}
 
-void Newton::step_rk4(Vector4d& x, Vector4d& v, const std::tuple<Vector4d, Vector4d>& x_v_old, const double& dt) {
-	Vector4d x_old = std::get<0>(x_v_old);
-	Vector4d v_old = std::get<1>(x_v_old);
-	Vector<double, 8> old, newd;
-	for (size_t i = 0; i < 4; i++) {
+void Newton::step_rk4(Vector3d& x, Vector3d& v, const std::tuple<Vector3d, Vector3d>& x_v_old, const double& dt) {
+	Vector3d x_old = std::get<0>(x_v_old);
+	Vector3d v_old = std::get<1>(x_v_old);
+	Vector<double, 6> old, newd;
+	for (size_t i = 0; i < 3; i++) {
 		old[i] = x_old[i];
-		old[i + 4] = v_old[i];
+		old[i + 3] = v_old[i];
 	}
 
-	Vector<double, 8> k1, k2, k3, k4;
+	Vector<double, 6> k1, k2, k3, k4;
 	k1 = rk_f(old);
 	k2 = rk_f(old + 0.5 * dt * k1);
 	k3 = rk_f(old + 0.5 * dt * k2);
@@ -62,67 +65,113 @@ void Newton::step_rk4(Vector4d& x, Vector4d& v, const std::tuple<Vector4d, Vecto
 
 	newd = old + dt * (k1 + 2.0 * k2 + 2.0 * k3 + k4) / 6.0;
 
-	for (size_t i = 0; i < 4; i++) {
+	for (size_t i = 0; i < 3; i++) {
 		x[i] = newd[i];
-		v[i] = newd[4 + i];
+		v[i] = newd[3 + i];
 	}
 
 }
 
-Vector<double, 8> Newton::rk_f(const Vector<double, 8>& d) {
-	Vector<double, 8>tmp;
-	Vector<double, 4> x = { d[0],d[1],d[2],d[3] };
-	Vector<double, 4>v = { d[4],d[5],d[6],d[7] };
+Vector<double, 6> Newton::rk_f(const Vector<double, 6>& d) {
+	Vector<double, 6> tmp;
+	Vector<double, 3> x = { d[0],d[1],d[2]};
+	Vector<double, 3> v = { d[3],d[4],d[5]};
 
-	tmp << v, calculate_acceleration_newton(x);
+	tmp << v, calculate_acc_newton(x);
 	return tmp;
 }
 
+tuple<Vector3d, Matrix3d> Newton::calculate_acc_jac_newton_numerical(const Vector3d& xx,double eps) {
+	Vector3d acc = calculate_acc_newton(xx);
+	Matrix3d jac = Matrix3d::Zero();
+
+	for (size_t i = 0; i < 3; i++) {
+		Vector3d xp = 1.0 * xx;
+		Vector3d xm = 1.0 * xx;
+		xp[i] += eps;
+		xm[i] -= eps;
+
+		Vector3d dacc = 0.5 * (calculate_acc_newton(xp) - calculate_acc_newton(xm)) / eps;
+		jac(0, i) = dacc(0);
+		jac(1, i) = dacc(1);
+		jac(2, i) = dacc(2);
+	}
+	return make_tuple(acc, jac);
+}
+tuple<Vector3d,Matrix3d> Newton::calculate_acc_jac_newton(const Vector3d& xx) {
+	double g = 6.67430e-11;
+
+	Vector3d acc = { 0, 0, 0 };
+	Matrix3d accjac = Matrix3d::Zero();
+	for (auto it = this->masses.begin(); it != this->masses.end(); it++) {
+		Vector3d r0 = get<1>(*it);
+		double mass = get<0>(*it);
+
+		Vector3d r = xx - r0;
+		double r2 = r.transpose().dot(r);
+		double rr = sqrt(r2);
+		double r3 = r2 * rr;
+		double r5 = r2 * r3;
+		Vector3d er = r / rr;
+		acc += -mass * g * er / r2;
+
+
+		accjac(0, 0) += -g * mass / r3;
+		accjac(0, 0) += 1.5 * g * mass * r(0) * 2 * r(0)/r5;
+		accjac(0, 1) += 1.5 * g * mass * r(0) * 2 * r(1) / r5;
+		accjac(0, 2) += 1.5 * g * mass * r(0) * 2 * r(2) / r5;
+
+		accjac(1, 1) += -g * mass / r3;
+		accjac(1, 1) += 1.5 * g * mass * r(1) * 2 * r(1) / r5;
+		accjac(1, 0) += 1.5 * g * mass * r(1) * 2 * r(0) / r5;
+		accjac(1, 2) += 1.5 * g * mass * r(1) * 2 * r(2) / r5;
+
+		accjac(2, 2) += -g * mass / r3;
+		accjac(2, 2) += 1.5 * g * mass * r(2) * 2 * r(2) / r5;
+		accjac(2, 0) += 1.5 * g * mass * r(2) * 2 * r(0) / r5;
+		accjac(2, 1) += 1.5 * g * mass * r(2) * 2 * r(1) / r5;
+
+	}
+	return make_tuple(acc,accjac);
+}
 void Newton::implicit_midpoint_resids(VectorXd& res, MatrixXd& J, const VectorXd& nowd, const VectorXd& old, const double& dt) {
-
-	Vector<var, 8> now;
-	for (size_t i = 0; i < 8; i++)
-		now[i] = nowd[i];
-	Vector4var xnow = { now[0],now[1],now[2],now[3] };
-	Vector4var xold = { old[0],old[1],old[2],old[3] };
-	Vector4var acc;
-
-	Vector4var u = { 0.5 * (now[4] + old[4]),0.5 * (now[5] + old[5]),0.5 * (now[6] + old[6]),0.5 * (now[7] + old[7]) };
-
-	Vector<var, 8> resids;
-
-	resids[0] = now[0] - old[0];
-	for (size_t i = 1; i < 4; i++)
-		resids[i] = now[i] - old[i] - 0.5 * dt * (now[i + 4] + old[i + 4]);
-
-	acc = calculate_acc_newton(0.5 * (xnow + xold));
-
-	resids[4] = now[4] - old[4];
-	for (size_t i = 1; i < 4; i++)
-		resids[4 + i] = now[4 + i] - old[4 + i] - acc[i] * dt;
-
 	
-	res = resids.cast<double>();
-	for (size_t i = 0; i < 8; i++)
-		J.row(i) = gradient(resids[i], now);
+	Vector3d xx;
+	xx << 0.5 * (nowd[0] + old[0]), 0.5 * (nowd[1] + old[1]), 0.5 * (nowd[2] + old[2]);
+
+	auto [acc, accjac] = calculate_acc_jac_newton(xx);
+	for (size_t i = 0; i < 3; i++) {
+		res[i] = (nowd[i] - old[i]) / dt - (nowd[i + 3] + old[i + 3]) / 2;
+		res[i + 3] = (nowd[i + 3] - old[i + 3]) / dt - acc[i];
+	}
+	for (size_t i = 0; i < 3; i++) {
+		J(i, i) = 1.0/dt;
+		J(i, i + 3) = -0.5;
+
+		J(i + 3, i + 3) = 1.0 / dt;
+		J(i + 3, 0) = -0.5 * accjac(i, 0);
+		J(i + 3, 1) = -0.5 * accjac(i, 1);
+		J(i + 3, 2) = -0.5 * accjac(i, 2);
+	}
+	
 }
 
 
-std::tuple<double, int> Newton::step_implicit_midpoint(Vector4d& x, Vector4d& v, const std::tuple<Vector4d, Vector4d>& x_v_old, const double& dt, const double tol) {
+std::tuple<double, int> Newton::step_implicit_midpoint(Vector3d& x, Vector3d& v, const std::tuple<Vector3d, Vector3d>& x_v_old, const double& dt, const double tol) {
 
 	VectorXd dx, errs;
 
 	VectorXd resids;
 	MatrixXd J;
 
-	resids = Vector<double, 8>::Zero();
-	J = Matrix<double, 8, 8>::Zero();
+	resids = Vector<double, 6>::Zero();
+	J = Matrix<double, 6, 6>::Zero();
 
 	auto [x_old, v_old] = x_v_old;
-	Vector<double, 8> nowd, oldd;
-	for (size_t i = 0; i < 4; i++) {
+	Vector<double, 6> nowd, oldd;
+	for (size_t i = 0; i < 3; i++) {
 		oldd[i] = x_old[i];
-		oldd[i + 4] = v_old[i];
+		oldd[i + 3] = v_old[i];
 	}
 
 
@@ -131,10 +180,10 @@ std::tuple<double, int> Newton::step_implicit_midpoint(Vector4d& x, Vector4d& v,
 	////
 
 
-	Vector4d acc = calculate_acc_newton(x_old.cast<var>()).cast<double>();
-	for (size_t i = 0; i < 4; i++) {
-		nowd[4 + i] = v_old[i] + dt *acc[i] ;
-		nowd[i] = x_old[i] + dt * nowd[4 + i];
+	Vector3d acc = calculate_acc_newton(x_old);
+	for (size_t i = 0; i < 3; i++) {
+		nowd[3 + i] = v_old[i] + dt * acc[i];
+		nowd[i] = x_old[i] + dt * nowd[3 + i];
 	}
 
 
@@ -152,7 +201,7 @@ std::tuple<double, int> Newton::step_implicit_midpoint(Vector4d& x, Vector4d& v,
 
 		errs = J * dx - resids;
 		err = -1.0;
-		for (size_t j = 0; j < 8; j++) {
+		for (size_t j = 0; j < 6; j++) {
 			if (err < abs(errs[j]))
 				err = abs(errs[j]);
 
@@ -162,9 +211,9 @@ std::tuple<double, int> Newton::step_implicit_midpoint(Vector4d& x, Vector4d& v,
 			break;
 		n += 1;
 	}
-	for (size_t i = 0; i < 4; i++) {
+	for (size_t i = 0; i < 3; i++) {
 		x[i] = nowd[i];
-		v[i] = nowd[4 + i];
+		v[i] = nowd[3 + i];
 	}
 	return std::make_tuple(err, n);
 };

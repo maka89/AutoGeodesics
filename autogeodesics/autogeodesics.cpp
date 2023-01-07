@@ -1,6 +1,7 @@
 #pragma once
 #include "autogeodesics.h"
-#include <iostream>
+
+
 void AutoGeodesics::implicit_midpoint_resids(VectorXd& res, MatrixXd& J, const VectorXd& nowd, const VectorXd& old, const double& dt) {
 
 	Vector<double, 8> now;
@@ -56,8 +57,6 @@ void AutoGeodesics::implicit_midpoint_resids(VectorXd& res, MatrixXd& J, const V
 	}
 	res = resids;
 }
-#include <iostream>
-using namespace std;
 Vector<double,8> AutoGeodesics::rk_f(const Vector<double, 8> &d) {
 	Vector<double, 8>tmp;
 	Vector4d x = { d[0],d[1],d[2],d[3] };
@@ -160,46 +159,3 @@ std::tuple<double,int> AutoGeodesics::step_implicit_midpoint(Vector4d& x, Vector
 	return std::make_tuple(err,n);
 };
 
-
-/*
-
-void AutoGeodesics::implicit_midpoint_resids(VectorXd& res, MatrixXd& J, const VectorXd& nowd, const VectorXd& old, const double& dt) {
-
-	Vector<var, 8> now;
-	for (size_t i = 0; i < 8; i++)
-		now[i] = nowd[i];
-	Vector4var xnow = { now[0],now[1],now[2],now[3] };
-	Vector4var xold = { old[0],old[1],old[2],old[3] };
-	Vector4var acc;
-
-	Vector4var u = { 0.5 * (now[4] + old[4]),0.5 * (now[5] + old[5]),0.5 * (now[6] + old[6]),0.5 * (now[7] + old[7]) };
-
-	Vector<var, 8> resids;
-	if (this->proper_time) {
-		for (size_t i = 0; i < 4; i++)
-			resids[i] = now[i] - old[i] - 0.5 * dt * (now[i + 4] + old[i + 4]);
-
-		acc = calculate_acc(0.5 * (xnow + xold), u);
-		for (size_t i = 0; i < 4; i++)
-			resids[4 + i] = now[4 + i] - old[4 + i] - acc[i] * dt;
-
-	}
-	else {
-
-
-		resids[0] = now[0] - old[0] - c_c * dt;
-		for (size_t i = 1; i < 4; i++)
-			resids[i] = now[i] - old[i] - 0.5 * dt * (now[i + 4] + old[i + 4]);
-
-		acc = calculate_acc(0.5 * (xnow + xold), u);
-
-		resids[4] = now[4] - old[4];
-		for (size_t i = 1; i < 4; i++)
-			resids[4 + i] = now[4 + i] - old[4 + i] - acc[i] * dt;
-
-	}
-	res = resids.cast<double>();
-	for (size_t i = 0; i < 8; i++)
-		J.row(i) = gradient(resids[i], now);
-}
-*/
