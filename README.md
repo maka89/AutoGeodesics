@@ -1,5 +1,7 @@
 # AutoGeodesics
-Easily integrate the geodesics equation using automatic differentiation. C++17
+Easily integrate the geodesics equation using automatic differentiation. C++17.
+
+- The branch api2 has a 5x speedup for implicit midpoint rule. But the API has a slightly less userfriendly way of specifying the metric.
 
 ## Introduction
 The purpose of this project is to make it easy to calculate paths of test particles being affected by gravity under the theory of general relativity. Using automatic differentiation, the user can specify a metric, without having to worry about its derivatives, which are needed to calculate the geodesics.
