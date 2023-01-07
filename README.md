@@ -2,7 +2,7 @@
 
 This branch does the same as the main branch, but uses forward mode autodiff instead of reverse mode.
 This gives a 5x speedup for implicit midpoint method.
-A separate function has to be specified for each of the 10 unique components of the metric.
+Difference in API is that a separate function has to be specified for each of the 10 unique components of the metric.
 
 ~~~c++
 AutoGeodesics ag = AutoGeodesics(false);
